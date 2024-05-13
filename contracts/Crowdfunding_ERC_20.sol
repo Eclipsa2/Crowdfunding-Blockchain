@@ -135,6 +135,18 @@ contract Crowdfunding is Pausable, Ownable {
         return campaignToken.balanceOf(user);
     }
 
+    function getDonators(uint256 _id) public view campaignExists(_id) returns (address[] memory, uint256[] memory) {
+        return (campaigns[_id].donators, campaigns[_id].donations);
+    }
+
+    function getCampaigns() external view returns (Campaign[] memory) {
+        Campaign[] memory allCampaigns = new Campaign[](number_of_campaigns);
+        for (uint256 i = 0; i < number_of_campaigns; i++) {
+            allCampaigns[i] = campaigns[i];
+        }
+        return allCampaigns;
+    }
+
     function pause() public onlyOwner {
         _pause();
     }
