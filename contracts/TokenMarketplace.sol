@@ -22,26 +22,42 @@ contract TokenMarketplace is ReentrancyGuard {
     event OfferCreated(uint256 indexed offerId, address indexed token, address indexed seller, uint256 tokenAmount, uint256 totalPrice, uint256 campaignId);
     event OfferCancelled(uint256 indexed offerId);
     event TokensPurchased(uint256 indexed offerId, address indexed token, address indexed buyer, uint256 tokenAmount, uint256 totalPrice);
+    event DebugInfo(address indexed user, string message, uint256 value);
 
     function listTokens(address tokenAddress, uint256 tokenAmount, uint256 totalPrice, uint256 campaignId) public {
-        require(tokenAmount > 0, "Token amount must be greater than zero.");
-        require(totalPrice > 0, "Total price must be greater than zero.");
+    emit DebugInfo(msg.sender, "Function Entry", 0);
 
-        ERC20 token = ERC20(tokenAddress);
-        token.safeTransferFrom(msg.sender, address(this), tokenAmount);
+    require(tokenAmount > 0, "Token amount must be greater than zero.");
+    emit DebugInfo(msg.sender, "Checked tokenAmount > 0", tokenAmount);
 
-        Offer memory newOffer = Offer({
-            seller: msg.sender,
-            token: tokenAddress,
-            tokenAmount: tokenAmount,
-            totalPrice: totalPrice,
-            campaignId: campaignId,
-            isActive: true
-        });
+    require(totalPrice > 0, "Total price must be greater than zero.");
+    emit DebugInfo(msg.sender, "Checked totalPrice > 0", totalPrice);
 
-        offers.push(newOffer);
-        uint256 offerId = offers.length - 1;
-        emit OfferCreated(offerId, tokenAddress, msg.sender, tokenAmount, totalPrice, campaignId);
+    ERC20 token = ERC20(tokenAddress);
+    emit DebugInfo(msg.sender, "ERC20 token initialized", 0);
+
+    uint256 allowance = token.allowance(msg.sender, address(this));
+    emit DebugInfo(msg.sender, "Token allowance checked", allowance);
+
+    require(allowance >= tokenAmount, "Check the token allowance");
+    emit DebugInfo(msg.sender, "Token allowance sufficient", allowance);
+
+    token.safeTransferFrom(msg.sender, address(this), tokenAmount);
+    emit DebugInfo(msg.sender, "Tokens transferred", tokenAmount);
+
+    Offer memory newOffer = Offer({
+        seller: msg.sender,
+        token: tokenAddress,
+        tokenAmount: tokenAmount,
+        totalPrice: totalPrice,
+        campaignId: campaignId,
+        isActive: true
+    });
+
+    offers.push(newOffer);
+    uint256 offerId = offers.length - 1;
+    emit OfferCreated(offerId, tokenAddress, msg.sender, tokenAmount, totalPrice, campaignId);
+    emit DebugInfo(msg.sender, "New offer created", offerId);
     }
 
     function cancelOffer(uint256 offerId) public {
@@ -70,4 +86,30 @@ contract TokenMarketplace is ReentrancyGuard {
 
         emit TokensPurchased(offerId, offer.token, msg.sender, offer.tokenAmount, msg.value);
     }
+
+    function getListings() public view returns (Offer[] memory) {
+    uint256 activeCount = 0;
+
+    // First, count active offers
+    for (uint256 i = 0; i < offers.length; i++) {
+        if (offers[i].isActive) {
+            activeCount++;
+        }
+    }
+
+    // Initialize an array to store active offers
+    Offer[] memory activeOffers = new Offer[](activeCount);
+    uint256 j = 0;
+
+    // Populate the array with active offers
+    for (uint256 i = 0; i < offers.length; i++) {
+        if (offers[i].isActive) {
+            activeOffers[j] = offers[i];
+            j++;
+        }
+    }
+
+    return activeOffers;
+}
+
 }

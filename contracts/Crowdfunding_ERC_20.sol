@@ -61,6 +61,10 @@ contract Crowdfunding is Pausable, Ownable {
         _;
     }
 
+    function weiToEth(uint256 weiAmount) internal pure returns (uint256) {
+        return weiAmount / 1 ether;
+    }
+
     function createCampaign(address _owner, string memory _title, string memory _description, uint256 _target, uint256 _deadline, string memory _image, string memory _tokenName, string memory _tokenSymbol) public whenNotPaused returns (uint256) {
         require(_deadline > block.timestamp, "Deadline must be in the future");
 
@@ -85,30 +89,34 @@ contract Crowdfunding is Pausable, Ownable {
         require(block.timestamp <= campaigns[_id].deadline, "Cannot donate, campaign ended.");
         Campaign storage campaign = campaigns[_id];
 
-        uint256 donation = msg.value;
-        uint256 needed = campaign.target - campaign.amount_collected;
+        uint256 donationWei = msg.value;
+        uint256 targetEth = weiToEth(campaign.target);
+        uint256 collectedEth = weiToEth(campaign.amount_collected);
+        uint256 donationEth = weiToEth(donationWei);
+        uint256 neededEth = targetEth - collectedEth;
 
-        if (donation > needed) {
-            donation = needed;  // Adjust the donation to what is exactly needed
-            uint256 excess = msg.value - needed;  // Calculate the excess amount to be refunded
-            payable(msg.sender).transfer(excess); // Refund the excess
+        if (donationEth > neededEth) {
+            uint256 excessWei = (donationEth - neededEth) * 1 ether;  // Convert excess eth back to wei
+            donationWei = neededEth * 1 ether;  // Adjust the donation in wei to the needed amount
+            payable(msg.sender).transfer(excessWei);  // Refund the excess in wei
         }
 
         campaign.donators.push(msg.sender);
-        campaign.donations.push(donation);
-        campaign.amount_collected += donation;
+        campaign.donations.push(donationWei);
+        campaign.amount_collected += donationWei;
 
-        emit DonationReceived(_id, msg.sender, donation);
+        emit DonationReceived(_id, msg.sender, donationWei);
 
         // Check if the campaign's funding target has been met or exceeded
-        if (campaign.amount_collected >= campaign.target) {
+        if (weiToEth(campaign.amount_collected) >= targetEth) {
             finalizeCampaign(_id); // Automatically finalize the campaign
         }
     }
 
     function finalizeCampaign(uint256 _id) internal {
-        require(!campaigns[_id].completed, "Campaign has already been finalized.");
         Campaign storage campaign = campaigns[_id];
+        require(!campaign.completed, "Campaign has already been finalized.");
+
         campaign.completed = true;
 
         if (campaign.amount_collected >= campaign.target) {
@@ -116,7 +124,7 @@ contract Crowdfunding is Pausable, Ownable {
             ERC20 campaignToken = ERC20(campaign.tokenAddress);
             uint256 totalDonations = campaign.amount_collected; // Total tokens to distribute
             for (uint i = 0; i < campaign.donators.length; i++) {
-                uint256 tokens = (campaign.donations[i] * 1000000) / totalDonations; // Token calculation proportional to donation
+                uint256 tokens = (campaign.donations[i] * 1000000 * (10 ** campaignToken.decimals())) / totalDonations; // Token calculation proportional to donation
                 campaignToken.transfer(campaign.donators[i], tokens);
                 emit TokensMinted(_id, campaign.donators[i], tokens);
             }
