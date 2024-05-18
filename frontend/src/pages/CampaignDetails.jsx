@@ -1,20 +1,31 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useContractContext } from "../context/ContractProvider";
 import Button from "../ui/Button";
 import { daysLeft } from "../utils/helpers";
+import { useState } from "react";
 
 /* eslint-disable react/prop-types */
 function CampaignDetails() {
-  const { getCampaign, isLoading, donateToCampaign } = useContractContext();
+  const { getCampaign, isLoading: isLoadingContracts, donate } = useContractContext();
   const { campaignId } = useParams();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [amount, setAmount] = useState(0);
+
+  const navigate = useNavigate();
 
   console.log(isLoading);
 
-  async function donate() {
-    await donateToCampaign(campaignId);
+  async function handleDonate() {
+    setIsLoading(true);
+
+    await donate(campaignId, amount);
+
+    navigate("/");
+    setIsLoading(false);
   }
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoadingContracts) return <div>Loading...</div>;
 
   const campaign = getCampaign(Number(campaignId));
 
@@ -61,9 +72,16 @@ function CampaignDetails() {
         <div className="h-full w-[30%] rounded-lg bg-slate-950 flex flex-col p-4 items-center justify-between">
           <p className="text-xl text-center">Contribute to this project</p>
           <form className="w-[75%]">
-            <input className="bg-transparent border-b-2 w-full" placeholder="amount" />
+            <input
+              value={amount}
+              onChange={(e) => {
+                setAmount(e.target.value);
+              }}
+              className="bg-transparent border-b-2 w-full"
+              placeholder="amount"
+            />
           </form>
-          <Button onClick={() => donate()}>Donate</Button>
+          <Button onClick={() => handleDonate()}>Donate</Button>
         </div>
       </div>
     </>

@@ -10,6 +10,7 @@ import {
 } from "@thirdweb-dev/react";
 import { createContext, useContext } from "react";
 import { weiToEth } from "../utils/helpers";
+import { ethers } from "ethers";
 
 const ContractContext = createContext();
 
@@ -40,7 +41,6 @@ function ContractProvider({ children }) {
   const metamaskConfig = metamaskWallet();
 
   const { mutateAsync: createCampaign } = useContractWrite(contract, "createCampaign");
-  const { mutateAsync: donate } = useContractWrite(contract, "donateToCampaign");
 
   const publishCampaign = async (campaign) => {
     try {
@@ -68,17 +68,13 @@ function ContractProvider({ children }) {
     return campaigns.filter((c) => c.id === id)[0];
   }
 
-  async function donateToCampaign(campaignId) {
-    try {
-      const data = await donate({
-        args: [campaignId],
-      });
+  const donate = async (campaignId, amount) => {
+    const data = await contract.call("donateToCampaign", [campaignId], {
+      value: ethers.utils.parseEther(amount),
+    });
 
-      console.log("Donated successfully", data);
-    } catch (error) {
-      console.log("Error donating to campaign", error);
-    }
-  }
+    return data;
+  };
 
   return (
     <ContractContext.Provider
@@ -93,7 +89,7 @@ function ContractProvider({ children }) {
         address,
         metamaskConfig,
         publishCampaign,
-        donateToCampaign,
+        donate,
       }}
     >
       {children}
