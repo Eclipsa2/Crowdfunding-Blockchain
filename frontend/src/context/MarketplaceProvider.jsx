@@ -11,9 +11,9 @@ import {
 import { createContext, useContext } from "react";
 import { weiToEth } from "../utils/helpers";
 
-const ContractContext = createContext();
+const MarketplaceContext = createContext();
 
-function ContractProvider({ children }) {
+function MarketplaceProvider({ children }) {
   const { contract } = useContract("0xC3ad3309b438a5De5DC2ea4694F92762D8D409DB");
 
   const { data, isLoading, error } = useContractRead(contract, "getCampaigns");
@@ -81,7 +81,7 @@ function ContractProvider({ children }) {
   }
 
   return (
-    <ContractContext.Provider
+    <MarketplaceContext.Provider
       value={{
         contract,
         campaigns,
@@ -97,12 +97,12 @@ function ContractProvider({ children }) {
       }}
     >
       {children}
-    </ContractContext.Provider>
+    </MarketplaceContext.Provider>
   );
 }
 
-export const useContractContext = () => {
-  return useContext(ContractContext);
+export const useMarketplaceContext = () => {
+  return useContext(MarketplaceContext);
 };
 
-export default ContractProvider;
+export default MarketplaceProvider;
