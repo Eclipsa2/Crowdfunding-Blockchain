@@ -107,4 +107,24 @@ contract TokenMarketplace {
 
         listing.active = false;
     }
+
+    function getAllListings() external view returns (Listing[] memory) {
+        uint256 activeCount = 0;
+        for (uint256 i = 0; i < listingCounter; i++) {
+            if (listings[i].active) {
+                activeCount++;
+            }
+        }
+
+        Listing[] memory activeListings = new Listing[](activeCount);
+        uint256 index = 0;
+        for (uint256 i = 0; i < listingCounter; i++) {
+            if (listings[i].active) {
+                activeListings[index] = listings[i];
+                index++;
+            }
+        }
+
+        return activeListings;
+    }
 }

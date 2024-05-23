@@ -15,7 +15,7 @@ import { ethers } from "ethers";
 const ContractContext = createContext();
 
 function ContractProvider({ children }) {
-  const { contract } = useContract("0xC3ad3309b438a5De5DC2ea4694F92762D8D409DB");
+  const { contract } = useContract("0x022Cf400257362efF627c1C05a084c8cD63C2c45");
 
   const { data, isLoading, error } = useContractRead(contract, "getCampaigns");
 
@@ -30,6 +30,9 @@ function ContractProvider({ children }) {
       image: campaign.image,
       donators: campaign.donators ? campaign.donators : [],
       id: i,
+      tokenAddress: campaign.tokenAddress,
+      tokenName: campaign.local_name,
+      tokenSymbol: campaign.local_symbol,
     })) ?? null;
 
   const connect = useConnect();
@@ -76,6 +79,12 @@ function ContractProvider({ children }) {
     return data;
   };
 
+  const getDetailsByTokenAddress = async (tokenAddress) => {
+    console.log("token address in context: ", tokenAddress);
+    const data = await contract.call("getTokenDetailsByTokenID", [tokenAddress]);
+    return data;
+  };
+
   return (
     <ContractContext.Provider
       value={{
@@ -90,6 +99,7 @@ function ContractProvider({ children }) {
         metamaskConfig,
         publishCampaign,
         donate,
+        getDetailsByTokenAddress,
       }}
     >
       {children}

@@ -24,3 +24,8 @@ export const checkIfImage = (url, callback) => {
 export const weiToEth = (wei) => {
   return wei * Math.pow(10, -18);
 };
+
+export const roundUpToSixDecimals = (number) => {
+  const factor = Math.pow(10, 6);
+  return Math.ceil(number * factor) / factor;
+};

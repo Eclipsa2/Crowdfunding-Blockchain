@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 contract CampaignToken is ERC20, ERC20Burnable, Pausable, Ownable {
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
-        _mint(msg.sender, 1000000 * (10 ** uint256(decimals())));
+        _mint(msg.sender, 1000 * (10 ** uint256(decimals())));
     }
 
     function pause() public onlyOwner {
@@ -38,6 +38,8 @@ contract Crowdfunding is Pausable, Ownable {
         address tokenAddress;
         address[] donators;
         uint256[] donations;
+        string local_name;
+        string local_symbol;
         bool completed;
         bool funded;
     }
@@ -78,6 +80,8 @@ contract Crowdfunding is Pausable, Ownable {
         campaign.deadline = _deadline;
         campaign.tokenAddress = address(newToken);
         campaign.amount_collected = 0;
+        campaign.local_name = _tokenName;
+        campaign.local_symbol = _tokenSymbol;
         campaign.completed = false;
         campaign.funded = false;
 
@@ -90,15 +94,14 @@ contract Crowdfunding is Pausable, Ownable {
         Campaign storage campaign = campaigns[_id];
 
         uint256 donationWei = msg.value;
-        uint256 targetEth = weiToEth(campaign.target);
-        uint256 collectedEth = weiToEth(campaign.amount_collected);
-        uint256 donationEth = weiToEth(donationWei);
-        uint256 neededEth = targetEth - collectedEth;
+        uint256 targetWei = campaign.target;
+        uint256 collectedWei = campaign.amount_collected;
+        uint256 neededWei = targetWei - collectedWei;
 
-        if (donationEth > neededEth) {
-            uint256 excessWei = (donationEth - neededEth) * 1 ether;  // Convert excess eth back to wei
-            donationWei = neededEth * 1 ether;  // Adjust the donation in wei to the needed amount
-            payable(msg.sender).transfer(excessWei);  // Refund the excess in wei
+        if (donationWei > neededWei) {
+            uint256 excessWei = donationWei - neededWei;
+            donationWei = neededWei;
+            payable(msg.sender).transfer(excessWei);
         }
 
         campaign.donators.push(msg.sender);
@@ -107,9 +110,8 @@ contract Crowdfunding is Pausable, Ownable {
 
         emit DonationReceived(_id, msg.sender, donationWei);
 
-        // Check if the campaign's funding target has been met or exceeded
-        if (weiToEth(campaign.amount_collected) >= targetEth) {
-            finalizeCampaign(_id); // Automatically finalize the campaign
+        if (campaign.amount_collected >= campaign.target) {
+            finalizeCampaign(_id);
         }
     }
 
@@ -117,14 +119,13 @@ contract Crowdfunding is Pausable, Ownable {
         Campaign storage campaign = campaigns[_id];
         require(!campaign.completed, "Campaign has already been finalized.");
 
-        campaign.completed = true;
-
         if (campaign.amount_collected >= campaign.target) {
+            campaign.completed = true;
             campaign.funded = true;
             ERC20 campaignToken = ERC20(campaign.tokenAddress);
-            uint256 totalDonations = campaign.amount_collected; // Total tokens to distribute
+            uint256 totalDonations = campaign.amount_collected;
             for (uint i = 0; i < campaign.donators.length; i++) {
-                uint256 tokens = (campaign.donations[i] * 1000000 * (10 ** campaignToken.decimals())) / totalDonations; // Token calculation proportional to donation
+                uint256 tokens = (campaign.donations[i] * 1000 * (10 ** campaignToken.decimals())) / totalDonations;
                 campaignToken.transfer(campaign.donators[i], tokens);
                 emit TokensMinted(_id, campaign.donators[i], tokens);
             }
@@ -153,6 +154,15 @@ contract Crowdfunding is Pausable, Ownable {
             allCampaigns[i] = campaigns[i];
         }
         return allCampaigns;
+    }
+
+    function getTokenDetailsByTokenID(address tokenAddress) public view returns (string memory name, string memory symbol) {
+        for (uint256 i = 0; i < number_of_campaigns; i++) {
+            if (campaigns[i].tokenAddress == tokenAddress) {
+                return (campaigns[i].local_name, campaigns[i].local_symbol);
+            }
+        }
+        revert("Token address not associated with any campaign");
     }
 
     function pause() public onlyOwner {

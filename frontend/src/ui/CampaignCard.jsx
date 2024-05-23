@@ -1,4 +1,5 @@
 import { daysLeft } from "../utils/helpers";
+import { roundUpToSixDecimals } from "../utils/helpers";
 
 /* eslint-disable react/prop-types */
 function CampaignCard({ onClick, campaign }) {
@@ -18,9 +19,12 @@ function CampaignCard({ onClick, campaign }) {
         <div className="flex items-center justify-between">
           <div>
             <p>
-              <span className="font-semibold">{campaign.amountCollected}</span> ETH
+              <span className="font-semibold">
+                {roundUpToSixDecimals(campaign.amountCollected)}
+              </span>{" "}
+              ETH
             </p>
-            <p>raised of {campaign.target} ETH</p>
+            <p>raised of {roundUpToSixDecimals(campaign.target)} ETH</p>
           </div>
           <div>
             <p>{daysLeft(campaign.deadline)}</p>

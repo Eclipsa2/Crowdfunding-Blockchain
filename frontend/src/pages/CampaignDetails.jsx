@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useContractContext } from "../context/ContractProvider";
 import Button from "../ui/Button";
 import { daysLeft } from "../utils/helpers";
+import { roundUpToSixDecimals } from "../utils/helpers";
 import { useState } from "react";
 
 /* eslint-disable react/prop-types */
@@ -10,7 +11,7 @@ function CampaignDetails() {
   const { campaignId } = useParams();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState("0");
 
   const navigate = useNavigate();
 
@@ -44,8 +45,10 @@ function CampaignDetails() {
               <p className="text-slate-300">days left</p>
             </div>
             <div className="flex flex-col items-center bg-slate-950 p-4 rounded-lg justify-center h-[45%] aspect-[3/2]">
-              <p className="font-bold text-2xl">{campaign.amountCollected}</p>
-              <p className="text-slate-300">raised out of {campaign.target}</p>
+              <p className="font-bold text-2xl">{roundUpToSixDecimals(campaign.amountCollected)}</p>
+              <p className="text-slate-300">
+                raised out of {roundUpToSixDecimals(campaign.target)}
+              </p>
             </div>
           </div>
           <div className="h-full flex flex-col justify-between">
@@ -54,7 +57,9 @@ function CampaignDetails() {
               <p className="text-slate-300">donators</p>
             </div>
             <div className="flex flex-col items-center bg-slate-950 p-4 rounded-lg justify-center h-[45%] aspect-[3/2]">
-              <p className="font-bold text-2xl">{campaign.target - campaign.amountCollected}</p>
+              <p className="font-bold text-2xl">
+                {roundUpToSixDecimals(campaign.target - campaign.amountCollected)}
+              </p>
               <p className="text-slate-300">more to go</p>
             </div>
           </div>

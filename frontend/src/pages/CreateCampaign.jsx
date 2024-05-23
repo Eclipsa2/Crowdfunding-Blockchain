@@ -142,7 +142,7 @@ function CreateCampaign() {
             </div>
           ) : (
             <div className=" aspect-video">
-              <img className="rounded-lg w-full h-full" src={imgSrc} />
+              <img className="rounded-lg w-full h-full object-cover" src={imgSrc} />
             </div>
           )}
         </div>
